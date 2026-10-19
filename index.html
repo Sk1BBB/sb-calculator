@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СБЦ — расчёт стоимости обследования зданий</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --card:#ffffff;
+    --muted:#64748b;
+    --line:#e2e8f0;
+    --accent:#2563eb;
+    --accent-2:#7c3aed;
+    --ok:#16a34a;
+    --soft:#f8fafc;
+    --text:#0f172a;
+    --shadow:0 20px 60px rgba(15,23,42,.18);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(900px 500px at 10% -10%,rgba(37,99,235,.28),transparent 60%),
+      radial-gradient(800px 500px at 100% 0%,rgba(124,58,237,.22),transparent 55%),
+      linear-gradient(180deg,#f8fafc 0%,#eef2ff 45%,#f8fafc 100%);
+    min-height:100vh;
+  }
+  a{color:inherit}
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    backdrop-filter:blur(14px);
+    background:rgba(255,255,255,.78);
+    border-bottom:1px solid rgba(226,232,240,.9);
+  }
+  .topbar-inner{
+    max-width:1180px;margin:0 auto;padding:14px 20px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.2px}
+  .logo{
+    width:40px;height:40px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#fff;display:grid;place-items:center;font-size:18px;
+    box-shadow:0 10px 24px rgba(37,99,235,.35);
+  }
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+  nav{display:flex;gap:18px;font-size:14px;color:#334155}
+  nav a{text-decoration:none;padding:8px 10px;border-radius:10px}
+  nav a:hover{background:#eef2ff;color:var(--accent)}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+  .hero{padding:64px 0 28px;display:grid;grid-template-columns:1.15fr .85fr;gap:32px;align-items:center}
+  .hero h1{font-size:clamp(32px,5vw,52px);line-height:1.05;margin:0 0 16px;letter-spacing:-.03em}
+  .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{font-size:17px;line-height:1.65;color:#475569;margin:0 0 22px;max-width:640px}
+  .badges{display:flex;gap:10px;flex-wrap:wrap}
+  .badge{
+    font-size:13px;padding:8px 12px;border-radius:999px;
+    background:rgba(255,255,255,.8);border:1px solid #dbeafe;color:#1d4ed8;font-weight:600;
+  }
+  .hero-card{
+    background:linear-gradient(180deg,#0f172a,#111827);
+    color:#e5e7eb;border-radius:24px;padding:26px;box-shadow:var(--shadow);
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .hero-card h3{margin:0 0 10px;font-size:18px}
+  .hero-card p{margin:0;color:#cbd5e1;line-height:1.65;font-size:14px}
+  .hero-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+  .metric{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px}
+  .metric b{display:block;font-size:20px;color:#fff;margin-bottom:2px}
+  .metric span{font-size:12px;color:#94a3b8}
+  .calc{padding:28px 0 20px;display:grid;grid-template-columns:1.05fr .95fr;gap:24px;align-items:start}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:24px;
+    box-shadow:0 16px 40px rgba(15,23,42,.08);
+  }
+  .form-card{padding:26px}
+  .result-card{padding:26px;position:sticky;top:86px}
+  .card h2{margin:0 0 6px;font-size:22px;letter-spacing:-.02em}
+  .card .hint{margin:0 0 22px;color:var(--muted);font-size:14px;line-height:1.55}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .field{display:flex;flex-direction:column;gap:7px}
+  .field.full{grid-column:1/-1}
+  label{font-size:13px;font-weight:700;color:#334155}
+  input,select{
+    width:100%;padding:13px 14px;border-radius:14px;border:1px solid #cbd5e1;
+    background:#fff;color:var(--text);font-size:15px;outline:none;
+    transition:border .15s, box-shadow .15s;
+  }
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+  .check{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);
+    border-radius:14px;background:var(--soft);font-size:14px;font-weight:600;color:#334155;
+  }
+  .check input{width:18px;height:18px;accent-color:var(--accent)}
+  .actions{display:flex;gap:12px;margin-top:20px}
+  button{
+    border:0;border-radius:14px;padding:14px 18px;font-size:15px;font-weight:800;cursor:pointer;
+    transition:transform .15s, box-shadow .15s, opacity .15s;
+  }
+  button:hover{transform:translateY(-1px)}
+  .btn-primary{
+    flex:1;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 14px 28px rgba(37,99,235,.28);
+  }
+  .btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
+  .total-label{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .total{
+    font-size:clamp(32px,5vw,46px);font-weight:900;letter-spacing:-.04em;line-height:1;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    margin-bottom:6px;
+  }
+  .total-sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td{padding:11px 0;border-bottom:1px solid #eef2f7;vertical-align:top}
+  td:last-child{text-align:right;font-weight:700;white-space:nowrap;padding-left:16px}
+  tr:last-child td{border-bottom:0}
+  .total-row td{padding-top:16px;font-size:16px;color:var(--accent)}
+  .note{
+    margin-top:18px;padding:14px 16px;border-radius:16px;
+    background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;line-height:1.55;
+  }
+  .method{padding:44px 0 56px}
+  .section-title{text-align:center;margin-bottom:26px}
+  .section-title h2{font-size:30px;margin:0 0 8px;letter-spacing:-.03em}
+  .section-title p{margin:0;color:var(--muted)}
+  .method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .method-card{
+    background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;
+    box-shadow:0 12px 30px rgba(15,23,42,.05);
+  }
+  .method-card .num{
+    width:34px;height:34px;border-radius:10px;background:#eef2ff;color:var(--accent);
+    display:grid;place-items:center;font-weight:900;margin-bottom:14px;
+  }
+  .method-card h3{margin:0 0 8px;font-size:17px}
+  .method-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.65}
+  footer{
+    background:#0f172a;color:#cbd5e1;padding:34px 0;
+  }
+  .footer-inner{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+  footer a{color:#e2e8f0;text-decoration:none}
+  footer a:hover{color:#fff}
+  .muted{color:#94a3b8;font-size:13px}
+  @media (max-width:900px){
+    .hero,.calc,.method-grid{grid-template-columns:1fr}
+    .result-card{position:static}
+    nav{display:none}
+  }
+  @media (max-width:560px){
+    .grid{grid-template-columns:1fr}
+    .actions{flex-direction:column}
+    .hero{padding-top:42px}
+  }
+  @media print{
+    .topbar,.hero,.method,footer,.actions,.note{display:none!important}
+    body{background:#fff}
+    .calc{display:block;padding:0}
+    .card{box-shadow:none;border:1px solid #ddd}
+    .result-card{position:static;margin-top:20px}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo">СБ</div>
+      <div>СБЦ-Калькулятор<small>обследование зданий и сооружений</small></div>
+    </div>
+    <nav>
+      <a href="#calc">Калькулятор</a>
+      <a href="#method">Методика</a>
+      <a href="#contacts">Контакты</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h1>Расчёт стоимости <span>обследования зданий</span> по СБЦ</h1>
+      <p>
+        Демонстрационный онлайн-калькулятор для предварительной оценки стоимости работ.
+        Укажите параметры объекта — получите ориентировочную цену с разбивкой по коэффициентам.
+      </p>
+      <div class="badges">
+        <div class="badge">Предварительная оценка</div>
+        <div class="badge">Без регистрации</div>
+        <div class="badge">Печать результата</div>
+      </div>
+    </div>
+    <div class="hero-card">
+      <h3>Что учитывает расчёт</h3>
+      <p>Базовая ставку СБЦ, вид обследования, категорию сложности, региональный коэффициент и индекс пересчёта в текущие цены.</p>
+      <div class="hero-metrics">
+        <div class="metric"><b>4</b><span>категории сложности</span></div>
+        <div class="metric"><b>3</b><span>вида обследования</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="calc" id="calc">
+    <div class="card form-card">
+      <h2>Параметры объекта</h2>
+      <p class="hint">Все поля можно менять — результат пересчитывается автоматически.</p>
+
+      <form id="calcForm">
+        <div class="grid">
+          <div class="field">
+            <label for="objectType">Тип объекта</label>
+            <select id="objectType">
+              <option value="building">Здание</option>
+              <option value="structure">Сооружение</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="purpose">Назначение</label>
+            <select id="purpose">
+              <option value="residential">Жилое</option>
+              <option value="public">Общественное</option>
+              <option value="industrial">Производственное</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="area">Площадь, м²</label>
+            <input id="area" type="number" min="0" step="1" value="1000">
+          </div>
+
+          <div class="field">
+            <label for="inspection">Вид обследования</label>
+            <select id="inspection">
+              <option value="complex">Комплексное</option>
+              <option value="technical">Техническое</option>
+              <option value="instrumental">Инструментальное</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="complexity">Категория сложности</label>
+            <select id="complexity">
+              <option value="1">1 — простая</option>
+              <option value="2">2 — средняя</option>
+              <option value="3">3 — сложная</option>
+              <option value="4">4 — особо сложная</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="region">Региональный коэффициент</label>
+            <input id="region" type="number" min="0" step="0.01" value="1.00">
+          </div>
+
+          <div class="field">
+            <label for="index">Индекс пересчёта цен</label>
+            <input id="index" type="number" min="0" step="0.01" value="1.00">
+          </div>
+
+          <div class="field">
+            <label>НДС</label>
+            <label class="check" for="vat">
+              <input id="vat" type="checkbox" checked>
+              Включить НДС 20%
+            </label>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn-primary" id="calcBtn">Рассчитать</button>
+          <button type="button" class="btn-ghost" onclick="window.print()">Печать</button>
+        </div>
+      </form>
+    </div>
+
+    <aside class="card result-card">
+      <div class="total-label">Ориентировочная стоимость</div>
+      <div class="total" id="total">—</div>
+      <div class="total-sub">с учётом выбранных коэффициентов</div>
+
+      <table>
+        <tr><td>Базовая стоимость по площади</td><td id="base">—</td></tr>
+        <tr><td>Вид обследования</td><td id="inspectionK">—</td></tr>
+        <tr><td>Категория сложности</td><td id="complexityK">—</td></tr>
+        <tr><td>Региональный коэффициент</td><td id="regionK">—</td></tr>
+        <tr><td>Индекс пересчёта</td><td id="indexK">—</td></tr>
+        <tr><td>Цена без НДС</td><td id="adjusted">—</td></tr>
+        <tr id="vatRow"><td>НДС 20%</td><td id="vatAmount">—</td></tr>
+        <tr class="total-row"><td>Итого</td><td id="totalTable">—</td></tr>
+      </table>
+
+      <div class="note">
+        Это демонстрационный шаблон. Ставки и коэффициенты в коде условные.
+        Для реальных расчётов замените их на актуальные таблицы СБЦ, индексы Минстроя и региональные коэффициенты.
+      </div>
+    </aside>
+  </section>
+
+  <section class="method" id="method">
+    <div class="section-title">
+      <h2>Как считается</h2>
+      <p>Упрощённая формула для предварительной оценки</p>
+    </div>
+    <div class="method-grid">
+      <div class="method-card">
+        <div class="num">1</div>
+        <h3>Базовая ставка</h3>
+        <p>Площадь объекта умножается на базовую ставку из справочника для выбранного типа и назначения.</p>
+      </div>
+      <div class="method-card">
+        <div class="num">2</div>
+        <h3>Коэффициенты</h3>
+        <p>Учитываются вид обследования, категория сложности, регион и индекс пересчёта в текущие цены.</p>
+      </div>
+      <div class="method-card">
+        <div class="num">3</div>
+        <h3>Итоговая цена</h3>
+        <p>К скорректированной стоимости добавляется НДС, если он включён. Результат можно распечатать.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="contacts">
+  <div class="footer-inner">
+    <div>
+      <strong>Project BimChat</strong><br>
+      <span class="muted">Внутренний демонстрационный проект</span>
+    </div>
+    <div class="muted">
+      <a href="mailto:admin@projectbimchat.ru">admin@projectbimchat.ru</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ВНИМАНИЕ: демонстрационные ставки, ₽/м². Замените на данные СБЦ.
+  const RATES = {
+    building: {
+      residential: 120,
+      public: 150,
+      industrial: 180
+    },
+    structure: {
+      residential: 90,
+      public: 110,
+      industrial: 140
+    }
+  };
+
+  const INSPECTION = {
+    complex:      { label: "Комплексное",      k: 1.00 },
+    technical:    { label: "Техническое",      k: 0.70 },
+    instrumental: { label: "Инструментальное", k: 1.30 }
+  };
+
+  const COMPLEXITY = {
+    "1": 1.00,
+    "2": 1.15,
+    "3": 1.30,
+    "4": 1.50
+  };
+
+  const money = new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 0
+  });
+
+  const $ = (id) => document.getElementById(id);
+
+  function calc() {
+    const objectType = $("objectType").value;
+    const purpose = $("purpose").value;
+    const area = Math.max(0, parseFloat($("area").value) || 0);
+    const inspection = $("inspection").value;
+    const complexity = $("complexity").value;
+    const region = Math.max(0, parseFloat($("region").value) || 0);
+    const index = Math.max(0, parseFloat($("index").value) || 0);
+    const withVat = $("vat").checked;
+
+    const rate = RATES[objectType][purpose];
+    const base = area * rate;
+    const afterInspection = base * INSPECTION[inspection].k;
+    const afterComplexity = afterInspection * COMPLEXITY[complexity];
+    const adjusted = afterComplexity * region * index;
+    const vat = withVat ? adjusted * 0.20 : 0;
+    const total = adjusted + vat;
+
+    $("base").textContent = money.format(base);
+    $("inspectionK").textContent = INSPECTION[inspection].label + " × " + INSPECTION[inspection].k.toFixed(2);
+    $("complexityK").textContent = "Категория " + complexity + " × " + COMPLEXITY[complexity].toFixed(2);
+    $("regionK").textContent = "× " + region.toFixed(2);
+    $("indexK").textContent = "× " + index.toFixed(2);
+    $("adjusted").textContent = money.format(adjusted);
+    $("vatAmount").textContent = withVat ? money.format(vat) : "не включён";
+    $("vatRow").style.display = withVat ? "" : "none";
+    $("total").textContent = money.format(total);
+    $("totalTable").textContent = money.format(total);
+  }
+
+  const form = $("calcForm");
+  form.addEventListener("input", calc);
+  form.addEventListener("change", calc);
+  $("calcBtn").addEventListener("click", calc);
+  calc();
+</script>
+</body>
+</html>
